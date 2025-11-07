@@ -28,7 +28,7 @@ homepage = "https://github.com/int3x/gmsatool"
 repository = "https://github.com/int3x/gmsatool"
 
 [project.scripts]
-gmsatool = "main:app"
+gmsatool = "gmsatool.main:app"
 
 [tool.ruff]
 line-length = 200
