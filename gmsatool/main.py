@@ -34,7 +34,7 @@ def find_gmsa(
     username: Annotated[str, typer.Option("--username", "-u", help="The username")] = None,
     password: Annotated[str, typer.Option("--password", "-p", help="The password")] = None,
     hash: Annotated[str, typer.Option("--hash", "-H", help="The NT hash for the domain account")] = None,
-    kerberos: Annotated[bool, typer.Option("-k", help="Use Kerberos authentication. Default TGT location is /tmp/krb5cc_1000")] = False,
+    kerberos: Annotated[bool, typer.Option("-k", help="Use Kerberos authentication. Default TGT location is /tmp/krb5cc_`id -u`")] = False,
     ldaps: Annotated[bool, typer.Option("--ldaps", help="Use LDAPS (port 636)")] = False,
     verbose: Annotated[bool, typer.Option("--verbose", "-v", help="Enable verbose output", callback=set_verbosity)] = False,
 ):
@@ -66,7 +66,7 @@ def read_password(
     username: Annotated[str, typer.Option("--username", "-u", help="The username")] = None,
     password: Annotated[str, typer.Option("--password", "-p", help="The password")] = None,
     hash: Annotated[str, typer.Option("--hash", "-H", help="The NT hash for the domain account")] = None,
-    kerberos: Annotated[bool, typer.Option("-k", help="Use Kerberos authentication. Default TGT location is /tmp/krb5cc_1000")] = False,
+    kerberos: Annotated[bool, typer.Option("-k", help="Use Kerberos authentication. Default TGT location is /tmp/krb5cc_`id -u`")] = False,
     ldaps: Annotated[bool, typer.Option("--ldaps", help="Use LDAPS (port 636)")] = False,
     verbose: Annotated[int, typer.Option("--verbose", "-v", help="Enable verbose output (-v or -vv)", callback=set_verbosity, count=True)] = 0,
 ):
@@ -102,7 +102,7 @@ def access(
     username: Annotated[str, typer.Option("--username", "-u", help="The username")] = None,
     password: Annotated[str, typer.Option("--password", "-p", help="The password")] = None,
     hash: Annotated[str, typer.Option("--hash", "-H", help="The NT hash for the domain account")] = None,
-    kerberos: Annotated[bool, typer.Option("-k", help="Use Kerberos authentication. Default TGT location is /tmp/krb5cc_1000")] = False,
+    kerberos: Annotated[bool, typer.Option("-k", help="Use Kerberos authentication. Default TGT location is /tmp/krb5cc_`id -u`")] = False,
     ldaps: Annotated[bool, typer.Option("--ldaps", help="Use LDAPS (port 636)")] = False,
     verbose: Annotated[int, typer.Option("--verbose", "-v", help="Enable verbose output (-v or -vv)", callback=set_verbosity, count=True)] = 0,
 ):
@@ -135,7 +135,7 @@ def auto(
     username: Annotated[str, typer.Option("--username", "-u", help="The username")] = None,
     password: Annotated[str, typer.Option("--password", "-p", help="The password")] = None,
     hash: Annotated[str, typer.Option("--hash", "-H", help="The NT hash for the domain account")] = None,
-    kerberos: Annotated[bool, typer.Option("-k", help="Use Kerberos authentication. Default TGT location is /tmp/krb5cc_1000")] = False,
+    kerberos: Annotated[bool, typer.Option("-k", help="Use Kerberos authentication. Default TGT location is /tmp/krb5cc_`id -u`")] = False,
     ldaps: Annotated[bool, typer.Option("--ldaps", help="Use LDAPS (port 636)")] = False,
     verbose: Annotated[int, typer.Option("--verbose", "-v", help="Enable verbose output (-v or -vv)", callback=set_verbosity, count=True)] = 0,
 ):
