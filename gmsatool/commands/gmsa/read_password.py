@@ -49,6 +49,6 @@ class GMSAReader:
 
         if data:
             blob = MSDS_MANAGEDPASSWORD_BLOB(data)
-            logger.warning(f"{bcolors.OKGREEN}[+] msDS-ManagedPassword obtained for {self.target}{bcolors.ENDC}")
+            logger.info(f"{bcolors.OKGREEN}[+] msDS-ManagedPassword obtained for {self.target}{bcolors.ENDC}")
             print(Panel(blob.calc_base64(), title="Base64 encoded gMSA password", title_align="left"))
             print(Panel(blob.calc_nthash(), title="gMSA password NThash", title_align="left"))

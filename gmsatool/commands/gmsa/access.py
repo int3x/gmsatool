@@ -27,7 +27,7 @@ class GMSAMembership:
         new_value = current_value + f"(A;;0xf01ff;;;{samaccountname_to_sid(self.ldap_session, self.dn, self.principal)})"
         new_value = SECURITY_DESCRIPTOR.from_sddl(new_value).to_bytes()
         modify_attribute(self.ldap_session, target_dn, "msDS-GroupMSAMembership", new_value)
-        logger.warning(f"{bcolors.OKGREEN}[+] msDS-GroupMSAMembership successfully updated for {target_dn}{bcolors.ENDC}")
+        logger.info(f"{bcolors.OKGREEN}[+] msDS-GroupMSAMembership successfully updated for {target_dn}{bcolors.ENDC}")
 
         result = get_entry(self.ldap_session, self.dn, search_filter="(sAMAccountName={self.target})", attributes=["msDS-GroupMSAMembership"], controls=security_descriptor_control(sdflags=0x07))
         gmsa_sd = SECURITY_DESCRIPTOR.from_bytes(result["attributes"]["msDS-GroupMSAMembership"])

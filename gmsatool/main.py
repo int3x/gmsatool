@@ -47,9 +47,7 @@ def find_gmsa(
         if dc is None:
             dc = domain
 
-        logger.debug("[*] Attempting to obtain an LDAP session...")
         ldap_session = get_ldap_session(domain, dc, ldaps, username, password, kerberos, all_info=True)
-        logger.debug(f"{bcolors.OKGREEN}[*] Session establised!{bcolors.ENDC}")
         gmsa_enumerator = GMSAEnumerator(domain, target, ldap_session)
         gmsa_enumerator.get_gmsa_accounts()
 
@@ -68,7 +66,7 @@ def read_password(
     hash: Annotated[str, typer.Option("--hash", "-H", help="The NT hash for the domain account")] = None,
     kerberos: Annotated[bool, typer.Option("-k", help="Use Kerberos authentication. Default TGT location is /tmp/krb5cc_`id -u`")] = False,
     ldaps: Annotated[bool, typer.Option("--ldaps", help="Use LDAPS (port 636)")] = False,
-    verbose: Annotated[int, typer.Option("--verbose", "-v", help="Enable verbose output (-v or -vv)", callback=set_verbosity, count=True)] = 0,
+    verbose: Annotated[int, typer.Option("--verbose", "-v", help="Enable verbose output", callback=set_verbosity, count=True)] = 0,
 ):
     try:
         if username is not None and (password is None and hash is None):
@@ -79,12 +77,7 @@ def read_password(
         if dc is None:
             dc = domain
 
-        logger.debug("[*] Attempting to obtain an LDAP session...")
         ldap_session = get_ldap_session(domain, dc, ldaps, username, password, kerberos, all_info=True)
-        logger.debug(f"{bcolors.OKGREEN}[*] Session establised!{bcolors.ENDC}")
-
-        logger.info(f"{bcolors.OKGREEN}{bcolors.BOLD}\n[+] Principals allowed to read the gMSA account for {target}:{bcolors.ENDC}")
-
         gmsa_reader = GMSAReader(domain, target, ldap_session)
         gmsa_reader.read_gmsa_password()
 
@@ -104,7 +97,7 @@ def access(
     hash: Annotated[str, typer.Option("--hash", "-H", help="The NT hash for the domain account")] = None,
     kerberos: Annotated[bool, typer.Option("-k", help="Use Kerberos authentication. Default TGT location is /tmp/krb5cc_`id -u`")] = False,
     ldaps: Annotated[bool, typer.Option("--ldaps", help="Use LDAPS (port 636)")] = False,
-    verbose: Annotated[int, typer.Option("--verbose", "-v", help="Enable verbose output (-v or -vv)", callback=set_verbosity, count=True)] = 0,
+    verbose: Annotated[int, typer.Option("--verbose", "-v", help="Enable verbose output", callback=set_verbosity, count=True)] = 0,
 ):
     try:
         if username is not None and (password is None and hash is None):
@@ -115,11 +108,9 @@ def access(
         if dc is None:
             dc = domain
 
-        logger.info(f"{bcolors.WARNING}\n[!] The feature to remove gMSA password read access has not been implemented!{bcolors.ENDC}")
+        logger.debug(f"{bcolors.WARNING}\n[*] The feature to remove gMSA password read access has not been implemented!{bcolors.ENDC}")
 
-        logger.debug("[*] Attempting to obtain an LDAP session...")
         ldap_session = get_ldap_session(domain, dc, ldaps, username, password, kerberos, all_info=True)
-        logger.debug(f"{bcolors.OKGREEN}[*] Session establised!{bcolors.ENDC}")
         gmsa_enumerator = GMSAMembership(domain, target, principal, ldap_session)
         gmsa_enumerator.add_readgmsapassword_access()
 
@@ -137,7 +128,7 @@ def auto(
     hash: Annotated[str, typer.Option("--hash", "-H", help="The NT hash for the domain account")] = None,
     kerberos: Annotated[bool, typer.Option("-k", help="Use Kerberos authentication. Default TGT location is /tmp/krb5cc_`id -u`")] = False,
     ldaps: Annotated[bool, typer.Option("--ldaps", help="Use LDAPS (port 636)")] = False,
-    verbose: Annotated[int, typer.Option("--verbose", "-v", help="Enable verbose output (-v or -vv)", callback=set_verbosity, count=True)] = 0,
+    verbose: Annotated[int, typer.Option("--verbose", "-v", help="Enable verbose output", callback=set_verbosity, count=True)] = 0,
 ):
     logger.error(f"{bcolors.FAIL}[!] Feature not implemented!{bcolors.ENDC}")
 

@@ -4,7 +4,7 @@ from rich import box
 from rich.console import Console
 from rich.table import Table
 
-from gmsatool.protocols.ldap import get_entry, sid_to_samaccountname
+from gmsatool.protocols.ldap import get_entry, sid_to_samaccountname, LDAPNoResultsError
 from gmsatool.helpers.common import logger, bcolors
 
 
@@ -16,29 +16,44 @@ class GMSAEnumerator:
         self.ldap_session = ldap_session
 
     def get_gmsa_accounts(self):
-        attributes = ["sAMAccountName", "msDS-GroupMSAMembership", "nTSecurityDescriptor"]
-        result = get_entry(self.ldap_session, self.dn, search_filter="(objectClass=msDS-GroupManagedServiceAccount)", attributes=attributes, controls=security_descriptor_control(sdflags=0x07))
+        try:
+            attributes = ["sAMAccountName", "msDS-GroupMSAMembership", "nTSecurityDescriptor"]
+            result = get_entry(self.ldap_session, self.dn, search_filter="(objectClass=msDS-GroupManagedServiceAccount)", attributes=attributes, controls=security_descriptor_control(sdflags=0x07))
+        except LDAPNoResultsError as e:
+            logger.error(f"{bcolors.FAIL}[!] {e}{bcolors.ENDC}")
+            return None
+
         sd = SECURITY_DESCRIPTOR.from_bytes(result["attributes"]["nTSecurityDescriptor"])
         gmsa_sd = SECURITY_DESCRIPTOR.from_bytes(result["attributes"]["msDS-GroupMSAMembership"])
 
-        gmsa_read_principals = Table(box=box.ROUNDED, title="[bold bright_yellow]Read privileges[/bold bright_yellow]", title_justify="left")
-        gmsa_read_principals.add_column("[bold bright_cyan]gMSA account[/bold bright_cyan]")
-        gmsa_read_principals.add_column("[bold bright_cyan]Principles with ReadGMSApassword privilege[/bold bright_cyan]")
-
+        read_privileges = []
         for ace in gmsa_sd.Dacl.aces:
-            gmsa_read_principals.add_row(result["attributes"]["sAMAccountName"], sid_to_samaccountname(self.ldap_session, self.dn, ace.Sid))
+            read_privileges.append((result["attributes"]["sAMAccountName"], sid_to_samaccountname(self.ldap_session, self.dn, ace.Sid)))
 
-        gmsa_modify_principals = Table(box=box.ROUNDED, title="\n[bold bright_yellow]Modify privileges[/bold bright_yellow]", title_justify="left")
-        gmsa_modify_principals.add_column("[bold bright_cyan]gMSA account[/bold bright_cyan]")
-        gmsa_modify_principals.add_column("[bold bright_cyan]Can modify ReadGMSApassword privilege[/bold bright_cyan]")
-
+        modify_privileges = []
         for ace in sd.Dacl.aces:
             # https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-ada2/c651f64d-5e92-4d12-9011-e6811ed306aa
             if hasattr(ace, "ObjectType") and str(ace.ObjectType) == "888eedd6-ce04-df40-b462-b8a50e41ba38":
-                gmsa_modify_principals.add_row(result["attributes"]["sAMAccountName"], sid_to_samaccountname(self.ldap_session, self.dn, ace.Sid))
-
-        logger.warning(f"{bcolors.OKGREEN}{bcolors.BOLD}\n[+] gMSA accounts found:{bcolors.ENDC}")
+                modify_privileges.append((result["attributes"]["sAMAccountName"], sid_to_samaccountname(self.ldap_session, self.dn, ace.Sid)))
 
         console = Console()
-        console.print(gmsa_read_principals)
-        console.print(gmsa_modify_principals)
+
+        if len(read_privileges) > 0:
+            gmsa_read_principals = Table(box=box.ROUNDED, title="[bold bright_yellow]Read privileges[/bold bright_yellow]", title_justify="left")
+            gmsa_read_principals.add_column("[bold bright_cyan]gMSA account[/bold bright_cyan]")
+            gmsa_read_principals.add_column("[bold bright_cyan]Principles with ReadGMSApassword privilege[/bold bright_cyan]")
+
+            for entry in read_privileges:
+                gmsa_read_principals.add_row(entry[0], entry[1])
+
+            console.print(gmsa_read_principals)
+
+        if len(modify_privileges) > 0:
+            gmsa_modify_principals = Table(box=box.ROUNDED, title="\n[bold bright_yellow]Modify privileges[/bold bright_yellow]", title_justify="left")
+            gmsa_modify_principals.add_column("[bold bright_cyan]gMSA account[/bold bright_cyan]")
+            gmsa_modify_principals.add_column("[bold bright_cyan]Can modify ReadGMSApassword privilege[/bold bright_cyan]")
+
+            for entry in modify_privileges:
+                gmsa_modify_principals.add_row(entry[0], entry[1])
+                
+            console.print(gmsa_modify_principals)

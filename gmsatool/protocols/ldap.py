@@ -2,6 +2,8 @@ import base64
 
 from ldap3 import Server, Connection, SASL, NTLM, KERBEROS, MODIFY_REPLACE, ALL_ATTRIBUTES, SCHEMA, ALL, TLS_CHANNEL_BINDING, ENCRYPT
 
+from gmsatool.helpers.common import logger
+
 
 class LDAPNoResultsError(Exception):
     pass
@@ -15,19 +17,24 @@ def get_ldap_session(domain, dc, ldaps, username, password, kerberos=False, all_
 
     if kerberos is False:
         if ldaps is True:
+            logger.debug(f"[*] Authenticating to ldaps://{dc}:636 with NTLM")
             ldap_session = Connection(server, user=f"{domain}\\{username}", password=password, authentication=NTLM, auto_bind=True, raise_exceptions=True, channel_binding=TLS_CHANNEL_BINDING)
         else:
+            logger.debug(f"[*] Authenticating to ldap://{dc}:389 with NTLM")
             ldap_session = Connection(server, user=f"{domain}\\{username}", password=password, authentication=NTLM, auto_bind=True, raise_exceptions=True, session_security=ENCRYPT)
     else:
         if ldaps is True:
+            logger.debug(f"[*] Authenticating to ldaps://{dc}:636 with Kerberos")
             ldap_session = Connection(server, authentication=SASL, sasl_mechanism=KERBEROS, auto_bind=True, raise_exceptions=True)
         else:
+            logger.debug(f"[*] Authenticating to ldap://{dc}:389 with Kerberos")
             ldap_session = Connection(server, authentication=SASL, sasl_mechanism=KERBEROS, auto_bind=True, raise_exceptions=True, session_security=ENCRYPT)
     return ldap_session
 
 
 def get_entry(ldap_session, dn, search_filter="(objectClass=*)", attributes=ALL_ATTRIBUTES, get_operational_attributes=False, controls=None):
     entries = []
+    logger.debug(f"[*] Querying {attributes} attribute on {dn} with search filter {search_filter}")
     ldap_session.search(search_base=dn, search_filter=search_filter, attributes=attributes, size_limit=1, get_operational_attributes=get_operational_attributes, controls=controls)
 
     for item in ldap_session.response:
@@ -39,10 +46,12 @@ def get_entry(ldap_session, dn, search_filter="(objectClass=*)", attributes=ALL_
 
 
 def modify_attribute(ldap_session, dn, attribute, new_value):
+    logger.debug(f"[*] Attempting to set the attribute {attribute} for {dn} to {new_value}")
     ldap_session.modify(dn, {attribute: [(MODIFY_REPLACE, [new_value])]})
 
 
 def sid_to_samaccountname(ldap_session, dn, sid):
+    logger.debug(f"[*] Querying sAMAccountName attribute on {dn} with search filter (objectSid={sid})")
     ldap_session.search(search_base=dn, search_filter=f"(objectSid={sid})", attributes=["sAMAccountName"], size_limit=1)
 
     entries = []
@@ -55,6 +64,7 @@ def sid_to_samaccountname(ldap_session, dn, sid):
 
 
 def samaccountname_to_sid(ldap_session, dn, samaccountname):
+    logger.debug(f"[*] Querying objectSid attribute on {dn} with search filter (sAMAccountName={samaccountname})")
     ldap_session.search(search_base=dn, search_filter=f"(sAMAccountName={samaccountname})", attributes=["objectSid"], size_limit=1)
 
     entries = []
