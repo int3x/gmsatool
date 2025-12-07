@@ -8,10 +8,10 @@ description = "A gMSA tool for enumeration, access management, and password retr
 version = "0.1.0"
 requires-python = ">= 3.11"
 dependencies = [
+    "cyclopts>=4.3.0",
     "gssapi>=1.10.1",
     "ldap3-bleeding-edge>=2.10.1.1338",
     "pycryptodome>=3.23.0",
-    "typer>=0.20.0",
     "winacl>=0.1.9",
 ]
 authors = [
