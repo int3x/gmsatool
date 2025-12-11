@@ -1,5 +1,3 @@
-import base64
-
 from ldap3 import Server, Connection, SASL, NTLM, KERBEROS, MODIFY_REPLACE, ALL_ATTRIBUTES, SCHEMA, ALL, TLS_CHANNEL_BINDING, ENCRYPT
 
 from gmsatool.helpers.common import logger
@@ -40,7 +38,7 @@ def get_entry(ldap_session, dn, search_filter="(objectClass=*)", attributes=ALL_
     for item in ldap_session.response:
         if item["type"] == "searchResEntry":
             entries.append(item)
-    
+
     if len(entries) == 0:
         raise LDAPNoResultsError(f"LDAP query for '{dn}' with search filter {search_filter} did not return any results")
     return entries
@@ -53,15 +51,15 @@ def modify_attribute(ldap_session, dn, attribute, new_value):
 
 def sid_to_samaccountname(ldap_session, dn, sid):
     logger.debug(f"[*] Querying sAMAccountName attribute on {dn} with search filter (objectSid={sid})")
-    ldap_session.search(search_base=dn, search_filter=f"(objectSid={sid})", attributes=["sAMAccountName"], size_limit=1)
+    ldap_session.search(search_base=dn, search_filter=f"(objectSid={sid})", attributes=["sAMAccountName", "objectClass"], size_limit=1)
 
     entries = []
     for item in ldap_session.response:
         if item["type"] == "searchResEntry":
             entries.append(item)
     if len(entries) == 0:
-        raise LDAPNoResultsError(f"LDAP query for '{dn}' with search filter {search_filter} did not return any results")
-    return entries[0]["attributes"]["sAMAccountName"]
+        raise LDAPNoResultsError(f"LDAP query for '{dn}' with search filter (objectSid={sid}) did not return any results")
+    return entries[0]["attributes"]["sAMAccountName"], entries[0]["attributes"]["objectClass"]
 
 
 def samaccountname_to_sid(ldap_session, dn, samaccountname):
@@ -73,5 +71,5 @@ def samaccountname_to_sid(ldap_session, dn, samaccountname):
         if item["type"] == "searchResEntry":
             entries.append(item)
     if len(entries) == 0:
-        raise LDAPNoResultsError(f"LDAP query for '{dn}' with search filter {search_filter} did not return any results")
+        raise LDAPNoResultsError(f"LDAP query for '{dn}' with search filter (sAMAccountName={samaccountname}) did not return any results")
     return entries[0]["attributes"]["objectSid"]

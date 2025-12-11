@@ -69,7 +69,8 @@ def find_gmsa(
     validate_auth_params(username, password, hash)
     ldap_session = setup_and_connect(domain, dc, username, password, hash, kerberos, ldaps, verbose)
     gmsa_enumerator = GMSAEnumerator(domain, ldap_session)
-    gmsa_enumerator.get_gmsa_accounts()
+    read_privileges, modify_privileges = gmsa_enumerator.get_gmsa_accounts()
+    gmsa_enumerator.display(read_privileges, modify_privileges)
 
 
 @gmsa_app.command
@@ -106,7 +107,7 @@ def access(
 ):
     """Grant or deny gMSA password read privilege to a principal"""
     logger.debug(f"{bcolors.WARNING}\n[*] The feature to remove gMSA password read access has not been implemented!{bcolors.ENDC}")
-    
+
     validate_auth_params(username, password, hash)
     ldap_session = setup_and_connect(domain, dc, username, password, hash, kerberos, ldaps, verbose)
     gmsa_enumerator = GMSAMembership(domain, target, principal, ldap_session)
@@ -130,7 +131,7 @@ def auto(
     ldap_session = setup_and_connect(domain, dc, username, password, hash, kerberos, ldaps, verbose)
     gmsa_automator = GMSAAutomator(domain, ldap_session)
     gmsa_automator.automate_enumeration()
-    
+
 
 if __name__ == "__main__":
     app()

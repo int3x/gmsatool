@@ -29,32 +29,41 @@ class GMSAEnumerator:
             if result["attributes"]["msDS-GroupMSAMembership"]:
                 gmsa_sd = SECURITY_DESCRIPTOR.from_bytes(result["attributes"]["msDS-GroupMSAMembership"])
                 for ace in gmsa_sd.Dacl.aces:
-                    read_privileges.append((result["attributes"]["sAMAccountName"], sid_to_samaccountname(self.ldap_session, self.dn, ace.Sid)))
+                    principal, principal_type = sid_to_samaccountname(self.ldap_session, self.dn, ace.Sid)
+                    read_privileges.append({"gmsa": result["attributes"]["sAMAccountName"], "principal": principal, "principal_type": principal_type})
 
             sd = SECURITY_DESCRIPTOR.from_bytes(result["attributes"]["nTSecurityDescriptor"])
             for ace in sd.Dacl.aces:
                 # https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-ada2/c651f64d-5e92-4d12-9011-e6811ed306aa
                 if hasattr(ace, "ObjectType") and str(ace.ObjectType) == "888eedd6-ce04-df40-b462-b8a50e41ba38":
-                    modify_privileges.append((result["attributes"]["sAMAccountName"], sid_to_samaccountname(self.ldap_session, self.dn, ace.Sid)))
+                    principal, principal_type = sid_to_samaccountname(self.ldap_session, self.dn, ace.Sid)
+                    modify_privileges.append({"gmsa": result["attributes"]["sAMAccountName"], "principal": principal, "principal_type": principal_type})
 
+        return read_privileges, modify_privileges
+
+    def display(self, read_privileges, modify_privileges):
         console = Console()
 
-        if len(read_privileges) > 0:
+        if read_privileges:
             gmsa_read_principals = Table(box=box.ROUNDED, title="[bold bright_yellow]Read privileges[/bold bright_yellow]", title_justify="left")
             gmsa_read_principals.add_column("[bold bright_cyan]gMSA account[/bold bright_cyan]")
-            gmsa_read_principals.add_column("[bold bright_cyan]Principles with ReadGMSApassword privilege[/bold bright_cyan]")
+            gmsa_read_principals.add_column("[bold bright_cyan]Principal with ReadGMSApassword[/bold bright_cyan]")
+            gmsa_read_principals.add_column("[bold bright_cyan]Principal Type[/bold bright_cyan]")
 
             for entry in read_privileges:
-                gmsa_read_principals.add_row(entry[0], entry[1])
+                principal_type = "Group" if "group" in entry["principal_type"] else "User"
+                gmsa_read_principals.add_row(entry["gmsa"], entry["principal"], principal_type)
 
             console.print(gmsa_read_principals)
 
-        if len(modify_privileges) > 0:
+        if modify_privileges:
             gmsa_modify_principals = Table(box=box.ROUNDED, title="\n[bold bright_yellow]Modify privileges[/bold bright_yellow]", title_justify="left")
             gmsa_modify_principals.add_column("[bold bright_cyan]gMSA account[/bold bright_cyan]")
-            gmsa_modify_principals.add_column("[bold bright_cyan]Can modify ReadGMSApassword privilege[/bold bright_cyan]")
+            gmsa_modify_principals.add_column("[bold bright_cyan]Access Manager[/bold bright_cyan]")
+            gmsa_modify_principals.add_column("[bold bright_cyan]Principal Type[/bold bright_cyan]")
 
             for entry in modify_privileges:
-                gmsa_modify_principals.add_row(entry[0], entry[1])
-                
+                principal_type = "Group" if "group" in entry["principal_type"] else "User"
+                gmsa_modify_principals.add_row(entry["gmsa"], entry["principal"], principal_type)
+
             console.print(gmsa_modify_principals)

@@ -4,6 +4,9 @@ from rich import box
 from rich.console import Console
 from rich.table import Table
 
+from gmsatool.commands.enum.find_gmsa import GMSAEnumerator
+from gmsatool.commands.gmsa.read_password import GMSAReader
+from gmsatool.commands.gmsa.access import GMSAMembership
 from gmsatool.protocols.ldap import get_entry, sid_to_samaccountname, LDAPNoResultsError
 from gmsatool.helpers.common import logger, bcolors
 
@@ -15,9 +18,4 @@ class GMSAAutomator:
         self.ldap_session = ldap_session
 
     def automate_enumeration(self):
-        attributes = ["sAMAccountName", "msDS-GroupMSAMembership", "nTSecurityDescriptor"]
-        # results = get_entry(self.ldap_session, self.dn, search_filter="(objectClass=msDS-GroupManagedServiceAccount)", attributes=attributes, controls=security_descriptor_control(sdflags=0x07))
-
-        # for result in results:
-        #     sd = SECURITY_DESCRIPTOR.from_bytes(result["attributes"]["nTSecurityDescriptor"])
-        #     gmsa_sd = SECURITY_DESCRIPTOR.from_bytes(result["attributes"]["msDS-GroupMSAMembership"])
+        return
