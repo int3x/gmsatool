@@ -21,7 +21,7 @@ class GMSAMembership:
         filter = f"(&(objectClass=msDS-GroupManagedServiceAccount)(sAMAccountName={self.target}))"
         result = get_entry(self.ldap_session, self.dn, search_filter=filter, attributes=attributes, controls=security_descriptor_control(sdflags=0x07))
 
-        target_dn = result["attributes"]["distinguishedName"]
+        target_dn = result[0]["attributes"]["distinguishedName"]
 
         current_value = SECURITY_DESCRIPTOR.from_bytes(result["attributes"]["msDS-GroupMSAMembership"]).to_sddl()
         new_value = current_value + f"(A;;0xf01ff;;;{samaccountname_to_sid(self.ldap_session, self.dn, self.principal)})"
@@ -30,7 +30,7 @@ class GMSAMembership:
         logger.info(f"{bcolors.OKGREEN}[+] msDS-GroupMSAMembership successfully updated for {target_dn}{bcolors.ENDC}")
 
         result = get_entry(self.ldap_session, self.dn, search_filter="(sAMAccountName={self.target})", attributes=["msDS-GroupMSAMembership"], controls=security_descriptor_control(sdflags=0x07))
-        gmsa_sd = SECURITY_DESCRIPTOR.from_bytes(result["attributes"]["msDS-GroupMSAMembership"])
+        gmsa_sd = SECURITY_DESCRIPTOR.from_bytes(result[0]["attributes"]["msDS-GroupMSAMembership"])
 
         gmsa_read_principals = Table(box=box.ROUNDED, title="[bold bright_yellow]Read privileges[/bold bright_yellow]", title_justify="left")
         gmsa_read_principals.add_column("[bold bright_cyan]gMSA account[/bold bright_cyan]")

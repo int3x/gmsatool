@@ -35,14 +35,15 @@ def get_ldap_session(domain, dc, ldaps, username, password, kerberos=False, all_
 def get_entry(ldap_session, dn, search_filter="(objectClass=*)", attributes=ALL_ATTRIBUTES, get_operational_attributes=False, controls=None):
     entries = []
     logger.debug(f"[*] Querying {attributes} attribute on {dn} with search filter {search_filter}")
-    ldap_session.search(search_base=dn, search_filter=search_filter, attributes=attributes, size_limit=1, get_operational_attributes=get_operational_attributes, controls=controls)
+    ldap_session.search(search_base=dn, search_filter=search_filter, attributes=attributes, get_operational_attributes=get_operational_attributes, controls=controls)
 
     for item in ldap_session.response:
         if item["type"] == "searchResEntry":
             entries.append(item)
+    
     if len(entries) == 0:
         raise LDAPNoResultsError(f"LDAP query for '{dn}' with search filter {search_filter} did not return any results")
-    return entries[0]
+    return entries
 
 
 def modify_attribute(ldap_session, dn, attribute, new_value):

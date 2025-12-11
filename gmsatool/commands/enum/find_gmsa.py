@@ -9,32 +9,33 @@ from gmsatool.helpers.common import logger, bcolors
 
 
 class GMSAEnumerator:
-    def __init__(self, domain, target, ldap_session):
+    def __init__(self, domain, ldap_session):
         self.domain = domain
         self.dn = ",".join([f"dc={i}" for i in self.domain.split(".")])
-        self.target = target
         self.ldap_session = ldap_session
 
     def get_gmsa_accounts(self):
         try:
             attributes = ["sAMAccountName", "msDS-GroupMSAMembership", "nTSecurityDescriptor"]
-            result = get_entry(self.ldap_session, self.dn, search_filter="(objectClass=msDS-GroupManagedServiceAccount)", attributes=attributes, controls=security_descriptor_control(sdflags=0x07))
+            results = get_entry(self.ldap_session, self.dn, search_filter="(objectClass=msDS-GroupManagedServiceAccount)", attributes=attributes, controls=security_descriptor_control(sdflags=0x07))
         except LDAPNoResultsError as e:
             logger.error(f"{bcolors.FAIL}[!] {e}{bcolors.ENDC}")
             return None
 
-        sd = SECURITY_DESCRIPTOR.from_bytes(result["attributes"]["nTSecurityDescriptor"])
-        gmsa_sd = SECURITY_DESCRIPTOR.from_bytes(result["attributes"]["msDS-GroupMSAMembership"])
-
         read_privileges = []
-        for ace in gmsa_sd.Dacl.aces:
-            read_privileges.append((result["attributes"]["sAMAccountName"], sid_to_samaccountname(self.ldap_session, self.dn, ace.Sid)))
-
         modify_privileges = []
-        for ace in sd.Dacl.aces:
-            # https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-ada2/c651f64d-5e92-4d12-9011-e6811ed306aa
-            if hasattr(ace, "ObjectType") and str(ace.ObjectType) == "888eedd6-ce04-df40-b462-b8a50e41ba38":
-                modify_privileges.append((result["attributes"]["sAMAccountName"], sid_to_samaccountname(self.ldap_session, self.dn, ace.Sid)))
+
+        for result in results:
+            if result["attributes"]["msDS-GroupMSAMembership"]:
+                gmsa_sd = SECURITY_DESCRIPTOR.from_bytes(result["attributes"]["msDS-GroupMSAMembership"])
+                for ace in gmsa_sd.Dacl.aces:
+                    read_privileges.append((result["attributes"]["sAMAccountName"], sid_to_samaccountname(self.ldap_session, self.dn, ace.Sid)))
+
+            sd = SECURITY_DESCRIPTOR.from_bytes(result["attributes"]["nTSecurityDescriptor"])
+            for ace in sd.Dacl.aces:
+                # https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-ada2/c651f64d-5e92-4d12-9011-e6811ed306aa
+                if hasattr(ace, "ObjectType") and str(ace.ObjectType) == "888eedd6-ce04-df40-b462-b8a50e41ba38":
+                    modify_privileges.append((result["attributes"]["sAMAccountName"], sid_to_samaccountname(self.ldap_session, self.dn, ace.Sid)))
 
         console = Console()
 

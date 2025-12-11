@@ -64,12 +64,11 @@ def find_gmsa(
     kerberos: Kerberos = False,
     ldaps: LDAPS = False,
     verbose: Verbose = False,
-    target: Annotated[Optional[str], Parameter(name="--target", help="The target gMSA account (optional)")] = None,
 ):
     """Find gMSA accounts, users with password read access, and users who can modify that access"""
     validate_auth_params(username, password, hash)
     ldap_session = setup_and_connect(domain, dc, username, password, hash, kerberos, ldaps, verbose)
-    gmsa_enumerator = GMSAEnumerator(domain, target, ldap_session)
+    gmsa_enumerator = GMSAEnumerator(domain, ldap_session)
     gmsa_enumerator.get_gmsa_accounts()
 
 
@@ -126,9 +125,12 @@ def auto(
     verbose: Verbose = False,
 ):
     """Automated enumeration and abuse of gMSA privileges (experimental)"""
-    validate_auth_params(username, password, hash)
     logger.error(f"{bcolors.FAIL}[!] Feature not implemented!{bcolors.ENDC}")
-
+    validate_auth_params(username, password, hash)
+    ldap_session = setup_and_connect(domain, dc, username, password, hash, kerberos, ldaps, verbose)
+    gmsa_automator = GMSAAutomator(domain, ldap_session)
+    gmsa_automator.automate_enumeration()
+    
 
 if __name__ == "__main__":
     app()

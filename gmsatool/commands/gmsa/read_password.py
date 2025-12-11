@@ -45,7 +45,7 @@ class GMSAReader:
         filter = f"(&(objectClass=msDS-GroupManagedServiceAccount)(sAMAccountName={self.target}))"
         result = get_entry(self.ldap_session, self.dn, search_filter=filter, attributes=["msDS-ManagedPassword"])
 
-        data = result["attributes"]["msDS-ManagedPassword"]
+        data = result[0]["attributes"]["msDS-ManagedPassword"]
 
         if data:
             blob = MSDS_MANAGEDPASSWORD_BLOB(data)
