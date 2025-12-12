@@ -110,8 +110,8 @@ def access(
 
     validate_auth_params(username, password, hash)
     ldap_session = setup_and_connect(domain, dc, username, password, hash, kerberos, ldaps, verbose)
-    gmsa_enumerator = GMSAMembership(domain, target, principal, ldap_session)
-    gmsa_enumerator.add_readgmsapassword_access()
+    gmsa_membership = GMSAMembership(domain, target, principal, ldap_session)
+    gmsa_membership.add_readgmsapassword_access()
 
 
 @gmsa_app.command
@@ -126,11 +126,10 @@ def auto(
     verbose: Verbose = False,
 ):
     """Automated enumeration and abuse of gMSA privileges (experimental)"""
-    logger.error(f"{bcolors.FAIL}[!] Feature not implemented!{bcolors.ENDC}")
     validate_auth_params(username, password, hash)
     ldap_session = setup_and_connect(domain, dc, username, password, hash, kerberos, ldaps, verbose)
     gmsa_automator = GMSAAutomator(domain, ldap_session)
-    gmsa_automator.automate_enumeration()
+    gmsa_automator.automate_exploit()
 
 
 if __name__ == "__main__":

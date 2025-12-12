@@ -59,7 +59,7 @@ def sid_to_samaccountname(ldap_session, dn, sid):
             entries.append(item)
     if len(entries) == 0:
         raise LDAPNoResultsError(f"LDAP query for '{dn}' with search filter (objectSid={sid}) did not return any results")
-    return entries[0]["attributes"]["sAMAccountName"], entries[0]["attributes"]["objectClass"]
+    return entries[0]["attributes"]["sAMAccountName"], entries[0]["dn"], entries[0]["attributes"]["objectClass"]
 
 
 def samaccountname_to_sid(ldap_session, dn, samaccountname):
@@ -73,3 +73,16 @@ def samaccountname_to_sid(ldap_session, dn, samaccountname):
     if len(entries) == 0:
         raise LDAPNoResultsError(f"LDAP query for '{dn}' with search filter (sAMAccountName={samaccountname}) did not return any results")
     return entries[0]["attributes"]["objectSid"]
+
+
+def check_group_membership(ldap_session, dn, username, group_dn):
+    logger.debug(f"[*] Querying memberOf attribute on {dn} with search filter (sAMAccountName={username})")
+    ldap_session.search(search_base=dn, search_filter=f"(&(sAMAccountName={username})(memberOf:1.2.840.113556.1.4.1941:={group_dn}))", attributes=["distinguishedName"])
+
+    entries = []
+    for item in ldap_session.response:
+        if item["type"] == "searchResEntry":
+            entries.append(item)
+    if len(entries) == 0:
+        return False
+    return True

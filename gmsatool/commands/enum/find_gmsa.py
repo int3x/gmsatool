@@ -29,15 +29,15 @@ class GMSAEnumerator:
             if result["attributes"]["msDS-GroupMSAMembership"]:
                 gmsa_sd = SECURITY_DESCRIPTOR.from_bytes(result["attributes"]["msDS-GroupMSAMembership"])
                 for ace in gmsa_sd.Dacl.aces:
-                    principal, principal_type = sid_to_samaccountname(self.ldap_session, self.dn, ace.Sid)
-                    read_privileges.append({"gmsa": result["attributes"]["sAMAccountName"], "principal": principal, "principal_type": principal_type})
+                    principal, principal_dn, principal_type = sid_to_samaccountname(self.ldap_session, self.dn, ace.Sid)
+                    read_privileges.append({"gmsa": result["attributes"]["sAMAccountName"], "principal": principal, "principal_dn": principal_dn, "principal_type": principal_type})
 
             sd = SECURITY_DESCRIPTOR.from_bytes(result["attributes"]["nTSecurityDescriptor"])
             for ace in sd.Dacl.aces:
                 # https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-ada2/c651f64d-5e92-4d12-9011-e6811ed306aa
                 if hasattr(ace, "ObjectType") and str(ace.ObjectType) == "888eedd6-ce04-df40-b462-b8a50e41ba38":
-                    principal, principal_type = sid_to_samaccountname(self.ldap_session, self.dn, ace.Sid)
-                    modify_privileges.append({"gmsa": result["attributes"]["sAMAccountName"], "principal": principal, "principal_type": principal_type})
+                    principal, principal_dn, principal_type = sid_to_samaccountname(self.ldap_session, self.dn, ace.Sid)
+                    modify_privileges.append({"gmsa": result["attributes"]["sAMAccountName"], "principal": principal, "principal_dn": principal_dn, "principal_type": principal_type})
 
         return read_privileges, modify_privileges
 
