@@ -8,16 +8,26 @@ from gmsatool.protocols.ldap import get_entry, sid_to_samaccountname, LDAPNoResu
 from gmsatool.helpers.common import logger, bcolors
 
 
-class GMSAEnumerator:
+class DMSAEnumerator:
     def __init__(self, domain, ldap_session):
         self.domain = domain
         self.dn = ",".join([f"dc={i}" for i in self.domain.split(".")])
         self.ldap_session = ldap_session
 
-    def get_gmsa_accounts(self):
+    def get_dmsa_accounts(self):
+        try:
+            results = get_entry(self.ldap_session, self.dn, search_filter="(&(objectClass=computer)(userAccountControl:1.2.840.113556.1.4.803:=8192))", attributes=["operatingSystem"])
+        except LDAPNoResultsError as e:
+            logger.error(f"{bcolors.FAIL}[!] {e}{bcolors.ENDC}")
+            return None, None
+
+        if "Windows Server 2025" not in results[0]["attributes"]["operatingSystem"]:
+            logger.error(f"{bcolors.FAIL}[!] dMSAs were introduced in Windows Server 2025. The target OS is {results[0]['attributes']['operatingSystem']}{bcolors.ENDC}")
+            return None, None
+ 
         try:
             attributes = ["sAMAccountName", "msDS-GroupMSAMembership", "nTSecurityDescriptor"]
-            results = get_entry(self.ldap_session, self.dn, search_filter="(objectClass=msDS-GroupManagedServiceAccount)", attributes=attributes, controls=security_descriptor_control(sdflags=0x07))
+            results = get_entry(self.ldap_session, self.dn, search_filter="(objectClass=msDS-DelegatedManagedServiceAccount)", attributes=attributes, controls=security_descriptor_control(sdflags=0x07))
         except LDAPNoResultsError as e:
             logger.error(f"{bcolors.FAIL}[!] {e}{bcolors.ENDC}")
             return None, None

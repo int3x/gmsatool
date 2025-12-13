@@ -5,6 +5,7 @@ import cyclopts
 from cyclopts import Parameter
 
 from gmsatool.commands.enum.find_gmsa import GMSAEnumerator
+from gmsatool.commands.enum.find_dmsa import DMSAEnumerator
 from gmsatool.commands.gmsa.read_password import GMSAReader
 from gmsatool.commands.gmsa.access import GMSAMembership
 from gmsatool.commands.gmsa.auto import GMSAAutomator
@@ -71,6 +72,25 @@ def find_gmsa(
     gmsa_enumerator = GMSAEnumerator(domain, ldap_session)
     read_privileges, modify_privileges = gmsa_enumerator.get_gmsa_accounts()
     gmsa_enumerator.display(read_privileges, modify_privileges)
+
+
+@enum_app.command
+def find_dmsa(
+    domain: Domain,
+    dc: DC = None,
+    username: Username = None,
+    password: Password = None,
+    hash: Hash = None,
+    kerberos: Kerberos = False,
+    ldaps: LDAPS = False,
+    verbose: Verbose = False,
+):
+    """Find dMSA accounts, users with password read access, and users who can modify that access"""
+    validate_auth_params(username, password, hash)
+    ldap_session = setup_and_connect(domain, dc, username, password, hash, kerberos, ldaps, verbose)
+    dmsa_enumerator = DMSAEnumerator(domain, ldap_session)
+    read_privileges, modify_privileges = dmsa_enumerator.get_dmsa_accounts()
+    dmsa_enumerator.display(read_privileges, modify_privileges)
 
 
 @gmsa_app.command
