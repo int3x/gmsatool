@@ -34,11 +34,11 @@ class GMSAAutomator:
             if "group" in entry["principal_type"]:
                 if check_group_membership(self.ldap_session, self.dn, self.user, entry["principal_dn"]):
                     logger.info(f"{bcolors.OKGREEN}[+] {self.user} is a member of group {entry['principal']} {bcolors.ENDC}")
-                    can_read_password.append(entry["gmsa"])
+                    can_modify_gmsa_membership.append(entry["gmsa"])
                     logger.info(f"{bcolors.OKGREEN}[+] {entry['principal']} can modify the msDS-GroupMSAMembership attribute for {entry['gmsa']} {bcolors.ENDC}")
             else:
                 if entry["principal"].lower() == self.user.lower():
-                    can_read_password.append(entry["gmsa"])
+                    can_modify_gmsa_membership.append(entry["gmsa"])
                     logger.info(f"{bcolors.OKGREEN}[+] {entry['principal']} can modify the msDS-GroupMSAMembership attribute for {entry['gmsa']} {bcolors.ENDC}")
 
         for target in can_read_password:
