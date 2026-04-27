@@ -5,11 +5,12 @@ build-backend = "hatchling.build"
 [project]
 name = "gmsatool"
 description = "A gMSA tool for enumeration, access management, and password retrieval."
-version = "0.1.0"
+version = "0.1.1"
 requires-python = ">= 3.11"
 dependencies = [
+    "cryptography>=47.0.0",
     "cyclopts>=4.3.0",
-    "gssapi>=1.10.1",
+    "gssapi>=1.11.1",
     "ldap3-bleeding-edge>=2.10.1.1338",
     "pycryptodome>=3.23.0",
     "winacl>=0.1.9",
