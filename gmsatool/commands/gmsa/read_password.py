@@ -3,21 +3,24 @@ import math
 from base64 import b64encode
 from binascii import hexlify
 
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.backends import default_backend
 from Cryptodome.Hash import MD4
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from rich import print
 from rich.panel import Panel
 
-from gmsatool.protocols.ldap import get_entry
+from gmsatool.helpers.common import bcolors, logger
 from gmsatool.helpers.structure import Structure
-from gmsatool.helpers.common import logger, bcolors
+from gmsatool.protocols.ldap import get_entry
 
 
 def _nfold(n_bits, data):
     k_bits = len(data) * 8
     lcm_bits = (n_bits * k_bits) // math.gcd(n_bits, k_bits)
-    def getbit(d, i): return (d[i // 8] >> (7 - (i % 8))) & 1
+
+    def getbit(d, i):
+        return (d[i // 8] >> (7 - (i % 8))) & 1
+
     buf = bytearray(lcm_bits // 8)
     for i in range(lcm_bits):
         copy = i // k_bits
@@ -40,7 +43,7 @@ def _nfold(n_bits, data):
 
 
 def _aes_string_to_key(password_bytes, salt_bytes, keysize, iterations=4096):
-    tkey = hashlib.pbkdf2_hmac('sha1', password_bytes, salt_bytes, iterations, keysize)
+    tkey = hashlib.pbkdf2_hmac("sha1", password_bytes, salt_bytes, iterations, keysize)
     k = _nfold(128, b"kerberos")
     result = b""
     while len(result) < keysize:
@@ -75,7 +78,7 @@ class MSDS_MANAGEDPASSWORD_BLOB(Structure):
 
     def calc_aes_keys(self, samaccountname, domain):
         password_utf8 = self["CurrentPassword"].decode("utf-16-le", "replace").encode("utf-8")
-        account = samaccountname.rstrip('$').lower() if samaccountname.endswith("$") else samaccountname.lower()
+        account = samaccountname.rstrip("$").lower() if samaccountname.endswith("$") else samaccountname.lower()
         salt = (domain.upper() + "host" + account + "." + domain.lower()).encode("utf-8")
         aes128 = _aes_string_to_key(password_utf8, salt, 16)
         aes256 = _aes_string_to_key(password_utf8, salt, 32)

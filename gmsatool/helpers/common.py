@@ -1,6 +1,5 @@
 import logging
 
-
 logger = logging.getLogger("gmsatool")
 handler = logging.StreamHandler()
 formatter = logging.Formatter("%(message)s")

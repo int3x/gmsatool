@@ -1,11 +1,11 @@
 from ldap3.protocol.microsoft import security_descriptor_control
-from winacl.dtyp.security_descriptor import SECURITY_DESCRIPTOR
 from rich import box
 from rich.console import Console
 from rich.table import Table
+from winacl.dtyp.security_descriptor import SECURITY_DESCRIPTOR
 
-from gmsatool.protocols.ldap import get_entry, sid_to_samaccountname, LDAPNoResultsError
-from gmsatool.helpers.common import logger, bcolors
+from gmsatool.helpers.common import bcolors, logger
+from gmsatool.protocols.ldap import LDAPNoResultsError, get_entry, sid_to_samaccountname
 
 
 class DMSAEnumerator:
@@ -16,18 +16,31 @@ class DMSAEnumerator:
 
     def get_dmsa_accounts(self):
         try:
-            results = get_entry(self.ldap_session, self.dn, search_filter="(&(objectClass=computer)(userAccountControl:1.2.840.113556.1.4.803:=8192))", attributes=["operatingSystem"])
+            results = get_entry(
+                self.ldap_session,
+                self.dn,
+                search_filter="(&(objectClass=computer)(userAccountControl:1.2.840.113556.1.4.803:=8192))",
+                attributes=["operatingSystem"],
+            )
         except LDAPNoResultsError as e:
             logger.error(f"{bcolors.FAIL}[!] {e}{bcolors.ENDC}")
             return None, None
 
         if "Windows Server 2025" not in results[0]["attributes"]["operatingSystem"]:
-            logger.error(f"{bcolors.FAIL}[!] dMSAs were introduced in Windows Server 2025. The target OS is {results[0]['attributes']['operatingSystem']}{bcolors.ENDC}")
+            logger.error(
+                f"{bcolors.FAIL}[!] dMSAs were introduced in Windows Server 2025. The target OS is {results[0]['attributes']['operatingSystem']}{bcolors.ENDC}"
+            )
             return None, None
- 
+
         try:
             attributes = ["sAMAccountName", "msDS-GroupMSAMembership", "nTSecurityDescriptor"]
-            results = get_entry(self.ldap_session, self.dn, search_filter="(objectClass=msDS-DelegatedManagedServiceAccount)", attributes=attributes, controls=security_descriptor_control(sdflags=0x07))
+            results = get_entry(
+                self.ldap_session,
+                self.dn,
+                search_filter="(objectClass=msDS-DelegatedManagedServiceAccount)",
+                attributes=attributes,
+                controls=security_descriptor_control(sdflags=0x07),
+            )
         except LDAPNoResultsError as e:
             logger.error(f"{bcolors.FAIL}[!] {e}{bcolors.ENDC}")
             return None, None
@@ -40,14 +53,28 @@ class DMSAEnumerator:
                 gmsa_sd = SECURITY_DESCRIPTOR.from_bytes(result["attributes"]["msDS-GroupMSAMembership"])
                 for ace in gmsa_sd.Dacl.aces:
                     principal, principal_dn, principal_type = sid_to_samaccountname(self.ldap_session, self.dn, ace.Sid)
-                    read_privileges.append({"gmsa": result["attributes"]["sAMAccountName"], "principal": principal, "principal_dn": principal_dn, "principal_type": principal_type})
+                    read_privileges.append(
+                        {
+                            "gmsa": result["attributes"]["sAMAccountName"],
+                            "principal": principal,
+                            "principal_dn": principal_dn,
+                            "principal_type": principal_type,
+                        }
+                    )
 
             sd = SECURITY_DESCRIPTOR.from_bytes(result["attributes"]["nTSecurityDescriptor"])
             for ace in sd.Dacl.aces:
                 # https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-ada2/c651f64d-5e92-4d12-9011-e6811ed306aa
                 if hasattr(ace, "ObjectType") and str(ace.ObjectType) == "888eedd6-ce04-df40-b462-b8a50e41ba38":
                     principal, principal_dn, principal_type = sid_to_samaccountname(self.ldap_session, self.dn, ace.Sid)
-                    modify_privileges.append({"gmsa": result["attributes"]["sAMAccountName"], "principal": principal, "principal_dn": principal_dn, "principal_type": principal_type})
+                    modify_privileges.append(
+                        {
+                            "gmsa": result["attributes"]["sAMAccountName"],
+                            "principal": principal,
+                            "principal_dn": principal_dn,
+                            "principal_type": principal_type,
+                        }
+                    )
 
         return read_privileges, modify_privileges
 
@@ -67,7 +94,9 @@ class DMSAEnumerator:
             console.print(gmsa_read_principals)
 
         if modify_privileges:
-            gmsa_modify_principals = Table(box=box.ROUNDED, title="\n[bold bright_yellow]Modify privileges[/bold bright_yellow]", title_justify="left")
+            gmsa_modify_principals = Table(
+                box=box.ROUNDED, title="\n[bold bright_yellow]Modify privileges[/bold bright_yellow]", title_justify="left"
+            )
             gmsa_modify_principals.add_column("[bold bright_cyan]gMSA account[/bold bright_cyan]")
             gmsa_modify_principals.add_column("[bold bright_cyan]Access Manager[/bold bright_cyan]")
             gmsa_modify_principals.add_column("[bold bright_cyan]Principal Type[/bold bright_cyan]")

@@ -1,8 +1,8 @@
 from ldap3.protocol.microsoft import security_descriptor_control
 from winacl.dtyp.security_descriptor import SECURITY_DESCRIPTOR
 
+from gmsatool.helpers.common import bcolors, logger
 from gmsatool.protocols.ldap import get_entry, modify_attribute, samaccountname_to_sid
-from gmsatool.helpers.common import logger, bcolors
 
 
 class GMSAMembership:
@@ -16,7 +16,9 @@ class GMSAMembership:
     def add_readgmsapassword_access(self):
         attributes = ["distinguishedName", "msDS-GroupMSAMembership"]
         filter = f"(&(objectClass=msDS-GroupManagedServiceAccount)(sAMAccountName={self.target}))"
-        result = get_entry(self.ldap_session, self.dn, search_filter=filter, attributes=attributes, controls=security_descriptor_control(sdflags=0x07))
+        result = get_entry(
+            self.ldap_session, self.dn, search_filter=filter, attributes=attributes, controls=security_descriptor_control(sdflags=0x07)
+        )
         target_dn = result[0]["attributes"]["distinguishedName"]
         current_sd = result[0]["attributes"]["msDS-GroupMSAMembership"]
 
