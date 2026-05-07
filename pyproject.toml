@@ -32,4 +32,4 @@ repository = "https://github.com/int3x/gmsatool"
 gmsatool = "gmsatool.main:app"
 
 [tool.ruff]
-line-length = 200
+line-length = 150
